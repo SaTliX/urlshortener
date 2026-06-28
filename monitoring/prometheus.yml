@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - 'alerts.yml'
+
+scrape_configs:
+  - job_name: 'urlshortener'
+    static_configs:
+      - targets:
+          - 'urlshortener-staging:8000'   # nom DNS Docker sur cicd-network
+    metrics_path: /metrics
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
