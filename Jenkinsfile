@@ -44,7 +44,7 @@ pipeline {
                     docker rm -f ${IMAGE_NAME}-test || true
 
                     docker run --name ${IMAGE_NAME}-test ${IMAGE_NAME}:${IMAGE_TAG} \
-                        sh -c "pytest tests/ -v \
+                        sh -c "PYTHONPATH=/app pytest tests/ -v \
                                --cov=src \
                                --cov-report=xml:/app/coverage.xml \
                                --cov-report=term-missing"
