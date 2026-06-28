@@ -89,9 +89,11 @@ pipeline {
             steps {
                 withSonarQubeEnv('sonarqube') {
                     sh '''
-                        docker run --rm \
+                        docker rm -f sonar-scan || true
+
+                        docker create \
+                            --name sonar-scan \
                             --network cicd-network \
-                            -v $(pwd):/usr/src \
                             -e SONAR_HOST_URL=${SONAR_HOST_URL} \
                             -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
                             sonarsource/sonar-scanner-cli \
@@ -99,6 +101,12 @@ pipeline {
                             -Dsonar.sources=src \
                             -Dsonar.python.coverage.reportPaths=coverage.xml \
                             -Dsonar.python.version=3.11
+
+                        docker cp . sonar-scan:/usr/src
+
+                        docker start -a sonar-scan
+
+                        docker rm sonar-scan
                     '''
                 }
             }
