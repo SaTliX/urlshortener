@@ -12,15 +12,40 @@ pipeline {
         // ── Stage 1 : Checkout ──────────────────────────────────────────────
         stage('Checkout') {
             steps {
+                deleteDir()
                 checkout scm
+
                 script {
                     env.IMAGE_TAG = sh(
                         script: 'git rev-parse --short HEAD',
                         returnStdout: true
                     ).trim()
                 }
-                sh 'echo "SHA: $IMAGE_TAG"'
-                sh 'git log --oneline -5'
+
+                sh '''
+                    echo "=== PWD ==="
+                    pwd
+
+                    echo "=== LS ROOT ==="
+                    ls -la
+
+                    echo "=== FIND FILES ==="
+                    find . -maxdepth 2 -type f | sort
+
+                    echo "=== GIT REMOTE ==="
+                    git remote -v
+
+                    echo "=== GIT FILES ==="
+                    git ls-files
+
+                    echo "=== CHECK SRC ==="
+                    test -d src
+                    test -f src/main.py
+                    test -f tests/test_main.py
+
+                    echo "SHA: $IMAGE_TAG"
+                    git log --oneline -5
+                '''
             }
         }
 
