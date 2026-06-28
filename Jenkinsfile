@@ -122,8 +122,55 @@ pipeline {
         // ── Stage 5 : Quality Gate ───────────────────────────────────────────
         stage('Quality Gate') {
             steps {
-                timeout(time: 3, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                withSonarQubeEnv('sonarqube') {
+                    sh '''
+                        echo "=== Manual Quality Gate Check ==="
+
+                        TASK_ID=$(grep ceTaskId .scannerwork/report-task.txt | cut -d= -f2)
+                        echo "Task ID: $TASK_ID"
+
+                        for i in $(seq 1 30); do
+                            RESPONSE=$(docker run --rm --network cicd-network curlimages/curl \
+                                -s -u "${SONAR_AUTH_TOKEN}:" \
+                                "http://sonarqube:9000/api/ce/task?id=$TASK_ID")
+
+                            echo "$RESPONSE"
+
+                            STATUS=$(echo "$RESPONSE" | sed -n 's/.*"status":"\\([^"]*\\)".*/\\1/p')
+
+                            if [ "$STATUS" = "SUCCESS" ]; then
+                                ANALYSIS_ID=$(echo "$RESPONSE" | sed -n 's/.*"analysisId":"\\([^"]*\\)".*/\\1/p')
+                                echo "Analysis ID: $ANALYSIS_ID"
+
+                                QG=$(docker run --rm --network cicd-network curlimages/curl \
+                                    -s -u "${SONAR_AUTH_TOKEN}:" \
+                                    "http://sonarqube:9000/api/qualitygates/project_status?analysisId=$ANALYSIS_ID")
+
+                                echo "$QG"
+
+                                QG_STATUS=$(echo "$QG" | sed -n 's/.*"status":"\\([^"]*\\)".*/\\1/p')
+
+                                if [ "$QG_STATUS" = "OK" ]; then
+                                    echo "Quality Gate PASSED"
+                                    exit 0
+                                else
+                                    echo "Quality Gate FAILED: $QG_STATUS"
+                                    exit 1
+                                fi
+                            fi
+
+                            if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "CANCELED" ]; then
+                                echo "SonarQube task failed: $STATUS"
+                                exit 1
+                            fi
+
+                            echo "Waiting for SonarQube task... status=$STATUS"
+                            sleep 5
+                        done
+
+                        echo "Timeout waiting for SonarQube Quality Gate"
+                        exit 1
+                    '''
                 }
             }
         }
