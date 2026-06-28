@@ -90,6 +90,8 @@ pipeline {
                 withSonarQubeEnv('sonarqube') {
                     sh '''
                         docker rm -f sonar-scan || true
+                        rm -rf .scannerwork
+                        mkdir -p .scannerwork
 
                         docker create \
                             --name sonar-scan \
@@ -106,6 +108,11 @@ pipeline {
 
                         docker start -a sonar-scan
 
+                        docker cp sonar-scan:/usr/src/.scannerwork/report-task.txt .scannerwork/report-task.txt
+
+                        echo "=== report-task.txt ==="
+                        cat .scannerwork/report-task.txt
+
                         docker rm sonar-scan
                     '''
                 }
@@ -115,7 +122,9 @@ pipeline {
         // ── Stage 5 : Quality Gate ───────────────────────────────────────────
         stage('Quality Gate') {
             steps {
-                waitForQualityGate abortPipeline: true
+                timeout(time: 3, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
 
