@@ -108,7 +108,7 @@ pipeline {
 
                         docker start -a sonar-scan
 
-                        docker cp sonar-scan:/usr/src/.scannerwork/report-task.txt .scannerwork/report-task.txt
+                        docker cp sonar-scan:/tmp/.scannerwork/report-task.txt .scannerwork/report-task.txt
 
                         echo "=== report-task.txt ==="
                         cat .scannerwork/report-task.txt
