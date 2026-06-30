@@ -75,6 +75,14 @@ pipeline {
                                --cov-report=term-missing"
 
                     docker cp ${IMAGE_NAME}-test:/app/coverage.xml ./coverage.xml
+                    echo "=== Coverage sources before fix ==="
+                    grep -n "<source>" coverage.xml || true
+
+                    sed -i 's#<source>/app/src</source>#<source>src</source>#g' coverage.xml
+                    sed -i 's#<source>/app</source>#<source>.</source>#g' coverage.xml
+
+                    echo "=== Coverage sources after fix ==="
+                    grep -n "<source>" coverage.xml || true
                 '''
             }
             post {
@@ -83,6 +91,7 @@ pipeline {
                 }
             }
         }
+        
 
         // ── Stage 4 : SonarQube Analysis ────────────────────────────────────
         stage('SonarQube Analysis') {
@@ -210,6 +219,8 @@ pipeline {
             steps {
                 dir('infra') {
                     sh '''
+                        docker rm -f urlshortener-staging || true
+
                         terraform init -input=false
                         terraform apply -auto-approve \
                             -var="image_tag=${IMAGE_TAG}"

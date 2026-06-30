@@ -3,4 +3,4 @@ source = src
 relative_files = True
 
 [report]
-omit = tests/*
+show_missing = True
