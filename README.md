@@ -16,9 +16,9 @@ et déployée via un pipeline Jenkins CI/CD complet.
 ## Membres du groupe
 
 - SANTARELLI Alexi
-- (membre 2)
-- (membre 3)
-- (membre 4)
+- BOUZARIA Farès
+- ROUX Alexis
+- BARRAK Jason
 
 ## Lancer localement
 
